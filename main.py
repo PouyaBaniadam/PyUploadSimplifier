@@ -2,8 +2,10 @@ import os
 import sys
 import tkinter
 from tkinter import *
+from tkinter import messagebox
 
 import pygame
+import pyperclip
 from PIL import ImageTk, ImageSequence
 from PIL.Image import open as pil_open
 
@@ -12,6 +14,51 @@ def main_screen():
     global bg
     global button_start
     global button_paste
+    global button_delete
+    global titles_entry
+
+    def insert_into_tags(titles_entry):
+        if len(titles_entry) != 0:
+            entry_list = titles_entry.strip().split('\n')
+
+            titles_tag_index = 0
+            titles_tag = ""
+
+            for title_to_be_added in entry_list:
+                html_tag = f'<li><a href="#{titles_tag_index + 1}"></a></li>'
+                insertion_index = html_tag.index("</a>")
+                titles_tag += html_tag[:insertion_index] + title_to_be_added + html_tag[insertion_index:] + "\n"
+                titles_tag_index += 1
+
+            titles_tag_result_to_copy = """<div class="catalogbox">
+    <strong><span style="color:#2f4f4f;">آنچه در این مقاله می خوانید:</span></strong>
+    <ul>
+""" + titles_tag + """</ul>
+</div>"""
+
+            h2_tag_index = 0
+            h2_tag = ""
+
+            for h2_to_be_added in entry_list:
+                html_tag = f'<h2 dir="RTL" id="{h2_tag_index + 1}" style="text-align: justify;"><strong></strong></h2><p>&nbsp;</p>'
+                insertion_index = html_tag.index("</strong>")
+                h2_tag += html_tag[:insertion_index] + h2_to_be_added + html_tag[insertion_index:] + "\n"
+                h2_tag_index += 1
+
+            h2_tag_result_to_copy = h2_tag
+
+            delete()
+
+            can_copy_titles = messagebox.askyesno(title="Copy?", message="Can I copy titles part to clipboard?")
+            if can_copy_titles:
+                pyperclip.copy(titles_tag_result_to_copy)
+
+            can_copy_h2s = messagebox.askyesno(title="Copy?", message="Can I copy H2 part to clipboard?")
+            if can_copy_h2s:
+                pyperclip.copy(h2_tag_result_to_copy)
+
+        else:
+            messagebox.showerror(title="Error", message="Give me some text first!")
 
     bg = PhotoImage(file=resource_path("media//screen.png"))
     bg_label = Label(image=bg)
@@ -25,6 +72,12 @@ def main_screen():
     def leave_hover(event):
         bind_button.place_forget()
 
+    def paste():
+        titles_entry.insert(END, pyperclip.paste())
+
+    def delete():
+        titles_entry.delete("1.0", "end")
+
     bind_button = Label(root, text="", bg="#2e2b32", fg="#2e2b32", font=("B Nazanin", 12))
     bind_button.pack()
 
@@ -33,17 +86,29 @@ def main_screen():
 
     button_paste = PhotoImage(file=resource_path("media//paste.png"))
     button_paste_label = Label(image=button_paste, borderwidth=0)
-    button_paste_label.place(x=220, y=345)
-    real_button_paste = Button(root, image=button_paste, borderwidth=0, activebackground="#1f1f1f", bg="#1f1f1f")
-    real_button_paste.place(x=220, y=345)
+    button_paste_label.place(x=350, y=345)
+    real_button_paste = Button(root, image=button_paste, borderwidth=0, activebackground="#1f1f1f", bg="#1f1f1f",
+                               command=paste)
+    real_button_paste.place(x=350, y=345)
     real_button_paste.bind("<Enter>",
                            lambda event: on_hover(event, event.widget, 0, 100, text=""))
     real_button_paste.bind("<Leave>", leave_hover)
 
+    button_delete = PhotoImage(file=resource_path("media//delete.png"))
+    button_delete_label = Label(image=button_delete, borderwidth=0)
+    button_delete_label.place(x=100, y=345)
+    real_button_delete = Button(root, image=button_delete, borderwidth=0, activebackground="#1f1f1f", bg="#1f1f1f",
+                                command=delete)
+    real_button_delete.place(x=100, y=345)
+    real_button_delete.bind("<Enter>",
+                            lambda event: on_hover(event, event.widget, 0, 100, text=""))
+    real_button_delete.bind("<Leave>", leave_hover)
+
     button_start = PhotoImage(file=resource_path("media//start.png"))
     button_start_label = Label(image=button_start, borderwidth=0)
     button_start_label.place(x=215, y=400)
-    real_button_start = Button(root, image=button_start, borderwidth=0, activebackground="#2e2b32", bg="#2e2b32")
+    real_button_start = Button(root, image=button_start, borderwidth=0, activebackground="#2e2b32", bg="#2e2b32",
+                               command=lambda: insert_into_tags(titles_entry=titles_entry.get('1.0', 'end-1c')))
     real_button_start.place(x=215, y=400)
     real_button_start.bind("<Enter>",
                            lambda event: on_hover(event, event.widget, 0, 100, text=""))
@@ -122,7 +187,7 @@ def splash_screen():
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play()
 
-    splash_root.after(5000, main_window)
+    splash_root.after(4750, main_window)
 
 
 if __name__ == "__main__":
